@@ -66,7 +66,7 @@ RUN set -e; \
     echo 'if [ -z "$ONLYOFFICE_BIN" ]; then' >> /home/${XRDP_USER}/.xsession && \
     echo '  ONLYOFFICE_BIN=$(find /opt /usr/bin -name "onlyoffice-desktopeditors" -o -name "DesktopEditors" 2>/dev/null | head -1)' >> /home/${XRDP_USER}/.xsession && \
     echo 'fi' >> /home/${XRDP_USER}/.xsession && \
-    echo 'exec "$ONLYOFFICE_BIN"' >> /home/${XRDP_USER}/.xsession && \
+    # echo 'exec "$ONLYOFFICE_BIN"' >> /home/${XRDP_USER}/.xsession && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
     # Cleanup
