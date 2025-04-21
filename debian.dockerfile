@@ -41,16 +41,18 @@ RUN set -e; \
       nano \
       curl \
       wget \
-      gnupg \
+      gnupg2 \
       ca-certificates \
-      lsb-release
+      lsb-release \
+      apt-transport-https 
 
 # Install OnlyOffice in a separate step with better error handling
 RUN set -e; \
-    mkdir -p /usr/share/keyrings && \
-    wget -qO - https://download.onlyoffice.com/install/desktop/linux/repo.key | gpg --dearmor > /usr/share/keyrings/onlyoffice-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/onlyoffice-keyring.gpg] https://download.onlyoffice.com/repo/debian $(lsb_release -cs) main" > /etc/apt/sources.list.d/onlyoffice.list && \
-    apt update && \
+    mkdir -p -m700 ~/.gnupg
+    gpg --no-default-keyring --keyring gnupg-ring:/tmp/onlyoffice.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys CB2DE8E5 \
+    sudo mv /tmp/onlyoffice.gpg /usr/share/keyrings/onlyoffice.gpg \
+    echo "deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] https://download.onlyoffice.com/repo/debian squeeze main" | sudo tee /etc/apt/sources.list.d/onlyoffice.list \
+    sudo apt update \
     apt install -qqy --no-install-recommends onlyoffice-desktopeditors && \
     # Setup user
     useradd -m -s /bin/bash "${XRDP_USER}" && \
