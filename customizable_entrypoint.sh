@@ -6,19 +6,23 @@ echo "Ready to start"
 # Function to run scripts
 run_script() {
     local script=$1
+    local timeout=300  # 5 minutes timeout
+    
+    echo "Running script: $script"
+    
     case "$script" in
         *.sh)
             if [ -x "$script" ]; then
-                "$script"
+                timeout $timeout "$script" || echo "Script $script timed out or failed with exit code $?"
             else
-                bash "$script"
+                timeout $timeout bash "$script" || echo "Script $script timed out or failed with exit code $?"
             fi
             ;;
         *.py)
             if [ -x "$script" ]; then
-                "$script"
+                timeout $timeout "$script" || echo "Script $script timed out or failed with exit code $?"
             else
-                python3 "$script"
+                timeout $timeout python3 "$script" || echo "Script $script timed out or failed with exit code $?"
             fi
             ;;
         *)
@@ -34,7 +38,10 @@ if [ "$CUSTOMIZE" = "true" ]; then
     if [ -f "$CUSTOM_ENTRYPOINTS_DIR/xrdp_fix.sh" ]; then
         echo "Running XRDP fix script..."
         chmod +x "$CUSTOM_ENTRYPOINTS_DIR/xrdp_fix.sh"
-        bash "$CUSTOM_ENTRYPOINTS_DIR/xrdp_fix.sh"
+        bash "$CUSTOM_ENTRYPOINTS_DIR/xrdp_fix.sh" &
+        XRDP_FIX_PID=$!
+        # Wait for the script to complete but with a timeout
+        timeout 60 tail --pid=$XRDP_FIX_PID -f /dev/null || true
     fi
     
     # Check if the base entry point script exists
