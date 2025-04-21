@@ -62,7 +62,7 @@ RUN set -e; \
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
     echo 'exec fluxbox &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
-    echo 'exec /usr/bin/onlyoffice-desktopeditors' >> /home/${XRDP_USER}/.xsession && \
+    echo 'exec /usr/bin/desktopeditors' >> /home/${XRDP_USER}/.xsession && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
     # Cleanup
