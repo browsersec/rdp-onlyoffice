@@ -1,5 +1,5 @@
 # Use a minimal base image
-FROM debian:stable-slim
+FROM debian:bookworm-slim
 
 # Build arguments to set environment variables at build time
 ARG DEF_XRDP_PORT=3389
@@ -40,12 +40,19 @@ RUN set -e; \
       xterm \
       nano \
       curl \
-      gnupg && \
-    # Add OnlyOffice repository
-    curl -fsSL https://download.onlyoffice.com/install/desktop/linux/repo.key | gpg --dearmor -o /usr/share/keyrings/onlyoffice-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/onlyoffice-keyring.gpg] https://download.onlyoffice.com/repo/debian squeeze main" > /etc/apt/sources.list.d/onlyoffice.list && \
+      wget \
+      gnupg \
+      ca-certificates \
+      lsb-release
+
+# Install OnlyOffice in a separate step with better error handling
+RUN set -e; \
+    mkdir -p /usr/share/keyrings && \
+    wget -qO - https://download.onlyoffice.com/install/desktop/linux/repo.key | gpg --dearmor > /usr/share/keyrings/onlyoffice-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/onlyoffice-keyring.gpg] https://download.onlyoffice.com/repo/debian $(lsb_release -cs) main" > /etc/apt/sources.list.d/onlyoffice.list && \
     apt update && \
     apt install -qqy --no-install-recommends onlyoffice-desktopeditors && \
+    # Setup user
     useradd -m -s /bin/bash "${XRDP_USER}" && \
     echo "${XRDP_USER}:${XRDP_PASSWORD}" | chpasswd && \
     # create an .xsession so xrdp will launch OnlyOffice on session start
@@ -55,6 +62,7 @@ RUN set -e; \
     echo 'exec /usr/bin/onlyoffice-desktopeditors' >> /home/${XRDP_USER}/.xsession && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
+    # Cleanup
     apt autoremove --purge -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
