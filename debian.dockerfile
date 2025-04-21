@@ -1,5 +1,5 @@
 # Use a minimal base image
-FROM debian:bookworm-slim
+FROM debian:stable-slim
 
 # Build arguments to set environment variables at build time
 ARG DEF_XRDP_PORT=3389
@@ -27,52 +27,53 @@ ENV \
     DEBIAN_FRONTEND=${DEF_DEBIAN_FRONTEND} \
     XRDP_PORT=${DEF_XRDP_PORT}
 
+RUN groupadd fuse 
+
 # Install necessary packages and setup noVNC
 RUN set -e; \
     apt update && \
     apt full-upgrade -qqy && \
-    apt install -qqy --no-install-recommends \
+    apt install -qqy \
       tini \
       supervisor \
       bash \
       xrdp \
       fluxbox \
       xterm \
-      nano \
-      curl \
       wget \
-      gnupg2 \
+      nano \
+      fuse \
+      libfuse2 \
+      libxkbcommon-x11-0 \
       ca-certificates \
-      lsb-release \
-      apt-transport-https 
-
-# Install OnlyOffice in a separate step with better error handling
-# Install OnlyOffice in a separate step with better error handling
-RUN set -e; \
-    apt update && \
-    # Direct DEB installation instead of repository
-    wget -O /tmp/onlyoffice-desktopeditors.deb https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb && \
-    apt install -qqy --no-install-recommends /tmp/onlyoffice-desktopeditors.deb && \
-    rm /tmp/onlyoffice-desktopeditors.deb && \
-    # Setup user
+      chromium && \
     useradd -m -s /bin/bash "${XRDP_USER}" && \
     echo "${XRDP_USER}:${XRDP_PASSWORD}" | chpasswd && \
-    # create an .xsession so xrdp will launch OnlyOffice on session start
+    # sudo groupadd fuse $$ \
+    # Add user to fuse group
+    adduser ${XRDP_USER} fuse && \
+    # Allow regular users to use FUSE
+    chmod u+s /bin/fusermount && \
+    # create an .xsession so xrdp will launch Chromium on session start
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
     echo 'exec fluxbox &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
-    # Find correct binary path dynamically
-    echo 'ONLYOFFICE_BIN=$(which onlyoffice-desktopeditors DesktopEditors 2>/dev/null | head -1)' >> /home/${XRDP_USER}/.xsession && \
-    echo 'if [ -z "$ONLYOFFICE_BIN" ]; then' >> /home/${XRDP_USER}/.xsession && \
-    echo '  ONLYOFFICE_BIN=$(find /opt /usr/bin -name "onlyoffice-desktopeditors" -o -name "DesktopEditors" 2>/dev/null | head -1)' >> /home/${XRDP_USER}/.xsession && \
-    echo 'fi' >> /home/${XRDP_USER}/.xsession && \
-    echo 'exec "$ONLYOFFICE_BIN"' >> /home/${XRDP_USER}/.xsession && \
+    echo 'exec /usr/bin/chromium --no-sandbox --disable-dev-shm-usage "${STARTING_WEBSITE_URL}"' >> /home/${XRDP_USER}/.xsession && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
-    # Cleanup
     apt autoremove --purge -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /etc/fuse.conf.d && \
+    echo "user_allow_other" > /etc/fuse.conf && \
+    chmod 644 /etc/fuse.conf
+
+RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download/v8.3.3/DesktopEditors-x86_64.AppImage -O /usr/local/bin/onlyoffice.AppImage && \ 
+    chmod +x /usr/local/bin/onlyoffice.AppImage && \ 
+    /usr/local/bin/onlyoffice.AppImage --appimage-extract && \
+    echo 'exec ./squashfs-root/AppRun' >> /home/${XRDP_USER}/.xsession   && \
+    rm -rf /usr/local/bin/onlyoffice.AppImage 
 
 # Create necessary directories for supervisor and custom entrypoints
 RUN mkdir -p /etc/supervisor.d /app/conf.d ${DEF_CUSTOM_ENTRYPOINTS_DIR}
@@ -83,7 +84,7 @@ COPY supervisord.conf /etc/supervisor.d/supervisord.conf
 # only bring in xrdp (and xterm) programs, drop VNC configs
 COPY conf.d/xrdp.conf conf.d/xterm.conf /app/conf.d/
 COPY base_entrypoint.sh customizable_entrypoint.sh /usr/local/bin/
-COPY browser_conf/onlyoffice.conf /app/conf.d/
+COPY browser_conf/chromium.conf /app/conf.d/
 
 # Make the entrypoint scripts executable
 RUN chmod +x /usr/local/bin/base_entrypoint.sh /usr/local/bin/customizable_entrypoint.sh
