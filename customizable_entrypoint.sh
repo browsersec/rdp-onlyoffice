@@ -29,6 +29,14 @@ run_script() {
 
 if [ "$CUSTOMIZE" = "true" ]; then
     echo "Customization is enabled."
+    
+    # Apply XRDP fix first - ensure this runs before any other script
+    if [ -f "$CUSTOM_ENTRYPOINTS_DIR/xrdp_fix.sh" ]; then
+        echo "Running XRDP fix script..."
+        chmod +x "$CUSTOM_ENTRYPOINTS_DIR/xrdp_fix.sh"
+        bash "$CUSTOM_ENTRYPOINTS_DIR/xrdp_fix.sh"
+    fi
+    
     # Check if the base entry point script exists
     if [ -f /usr/local/bin/base_entrypoint.sh ]; then
         echo "Running the base entry point in the background..."
