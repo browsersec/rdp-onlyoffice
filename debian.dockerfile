@@ -47,12 +47,15 @@ RUN set -e; \
       apt-transport-https 
 
 # Install OnlyOffice in a separate step with better error handling
+# Install OnlyOffice in a separate step with better error handling
 RUN set -e; \
     mkdir -p -m 700 ~/.gnupg && \
     gpg --no-default-keyring --keyring gnupg-ring:/tmp/onlyoffice.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys CB2DE8E5 && \
     chmod 644 /tmp/onlyoffice.gpg && \
     chown root:root /tmp/onlyoffice.gpg && \
     mv /tmp/onlyoffice.gpg /usr/share/keyrings/onlyoffice.gpg && \
+    # Add OnlyOffice repository to apt sources
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/onlyoffice.gpg] https://download.onlyoffice.com/repo/debian bookworm main" > /etc/apt/sources.list.d/onlyoffice.list && \
     apt update && \
     apt install -qqy --no-install-recommends onlyoffice-desktopeditors && \
     # Setup user
@@ -62,7 +65,7 @@ RUN set -e; \
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
     echo 'exec fluxbox &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
-    echo 'exec /usr/bin/desktopeditors' >> /home/${XRDP_USER}/.xsession && \
+    echo 'exec /usr/bin/onlyoffice-desktopeditors' >> /home/${XRDP_USER}/.xsession && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
     # Cleanup
