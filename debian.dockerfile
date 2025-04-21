@@ -31,7 +31,7 @@ ENV \
 RUN set -e; \
     apt update && \
     apt full-upgrade -qqy && \
-    apt install -qqy \
+    apt install -qqy --no-install-recommends \
       tini \
       supervisor \
       bash \
@@ -39,14 +39,20 @@ RUN set -e; \
       fluxbox \
       xterm \
       nano \
-      chromium && \
+      curl \
+      gnupg && \
+    # Add OnlyOffice repository
+    curl -fsSL https://download.onlyoffice.com/install/desktop/linux/repo.key | gpg --dearmor -o /usr/share/keyrings/onlyoffice-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/onlyoffice-keyring.gpg] https://download.onlyoffice.com/repo/debian squeeze main" > /etc/apt/sources.list.d/onlyoffice.list && \
+    apt update && \
+    apt install -qqy --no-install-recommends onlyoffice-desktopeditors && \
     useradd -m -s /bin/bash "${XRDP_USER}" && \
     echo "${XRDP_USER}:${XRDP_PASSWORD}" | chpasswd && \
-    # create an .xsession so xrdp will launch Chromium on session start
+    # create an .xsession so xrdp will launch OnlyOffice on session start
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
     echo 'exec fluxbox &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
-    echo 'exec /usr/bin/chromium --no-sandbox --disable-dev-shm-usage "${STARTING_WEBSITE_URL}"' >> /home/${XRDP_USER}/.xsession && \
+    echo 'exec /usr/bin/onlyoffice-desktopeditors' >> /home/${XRDP_USER}/.xsession && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
     apt autoremove --purge -y && \
@@ -62,7 +68,7 @@ COPY supervisord.conf /etc/supervisor.d/supervisord.conf
 # only bring in xrdp (and xterm) programs, drop VNC configs
 COPY conf.d/xrdp.conf conf.d/xterm.conf /app/conf.d/
 COPY base_entrypoint.sh customizable_entrypoint.sh /usr/local/bin/
-COPY browser_conf/chromium.conf /app/conf.d/
+COPY browser_conf/onlyoffice.conf /app/conf.d/
 
 # Make the entrypoint scripts executable
 RUN chmod +x /usr/local/bin/base_entrypoint.sh /usr/local/bin/customizable_entrypoint.sh
