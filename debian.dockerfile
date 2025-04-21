@@ -71,9 +71,15 @@ RUN mkdir -p /etc/fuse.conf.d && \
 
 RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download/v8.3.3/DesktopEditors-x86_64.AppImage -O /usr/local/bin/onlyoffice.AppImage && \ 
     chmod +x /usr/local/bin/onlyoffice.AppImage && \ 
+    mkdir -p /opt/onlyoffice && \
+    cd /opt/onlyoffice && \
     /usr/local/bin/onlyoffice.AppImage --appimage-extract && \
-    echo 'exec ./squashfs-root/AppRun' >> /home/${XRDP_USER}/.xsession   && \
-    rm -rf /usr/local/bin/onlyoffice.AppImage 
+    chmod +x /opt/onlyoffice/squashfs-root/AppRun && \
+    # Don't use exec for this command, so it won't terminate the session
+    sed -i 's|exec /usr/bin/chromium|/usr/bin/chromium|' /home/${XRDP_USER}/.xsession && \
+    # Add OnlyOffice to start after Chromium, but without exec
+    echo '/opt/onlyoffice/squashfs-root/AppRun &' >> /home/${XRDP_USER}/.xsession && \
+    rm -rf /usr/local/bin/onlyoffice.AppImage
 
 # Create necessary directories for supervisor and custom entrypoints
 RUN mkdir -p /etc/supervisor.d /app/conf.d ${DEF_CUSTOM_ENTRYPOINTS_DIR}
