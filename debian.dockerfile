@@ -70,13 +70,20 @@ RUN set -e; \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
     echo '/usr/bin/chromium --no-sandbox --disable-dev-shm-usage  --start-maximized "${STARTING_WEBSITE_URL}" &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
-    echo '/opt/onlyoffice/squashfs-root/AppRun --window-state=maximized &' >> /home/${XRDP_USER}/.xsession && \
+    echo '/opt/onlyoffice/squashfs-root/AppRun --view="/home/${XRDP_USER}/Documents/demo.docx" &' >> /home/${XRDP_USER}/.xsession && \
     echo 'wait' >> /home/${XRDP_USER}/.xsession && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
     apt autoremove --purge -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Download sample .docx file to view in onlyoffice
+
+RUN mkdir -p /home/${XRDP_USER}/Documents && \
+    wget https://calibre-ebook.com/downloads/demos/demo.docx -O /home/${XRDP_USER}/Documents/demo.docx && \
+    chown -R ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/Documents && \
+    chmod -R 755 /home/${XRDP_USER}/Documents
 
 RUN mkdir -p /etc/fuse.conf.d && \
     echo "user_allow_other" > /etc/fuse.conf && \
