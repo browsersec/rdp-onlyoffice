@@ -30,6 +30,7 @@ ENV \
 RUN groupadd fuse 
 
 # Install necessary packages and setup noVNC
+# Modify your .xsession setup in the RUN block
 RUN set -e; \
     apt update && \
     apt full-upgrade -qqy && \
@@ -45,20 +46,32 @@ RUN set -e; \
       fuse \
       libfuse2 \
       libxkbcommon-x11-0 \
+      # start 
+      libxcb-icccm4 \
+      libxcb-image0 \
+      libxcb-keysyms1 \
+      libxcb-render-util0 \
+      libxcb-xinerama0 \
+      libxcb-xkb1 \
+      libxcb-randr0 \
+      libxcb-shape0 \
+      libglib2.0-0 \
+      libasound2 \ 
       ca-certificates \
       chromium && \
+    # User setup remains the same
     useradd -m -s /bin/bash "${XRDP_USER}" && \
     echo "${XRDP_USER}:${XRDP_PASSWORD}" | chpasswd && \
-    # sudo groupadd fuse $$ \
-    # Add user to fuse group
     adduser ${XRDP_USER} fuse && \
-    # Allow regular users to use FUSE
     chmod u+s /bin/fusermount && \
-    # create an .xsession so xrdp will launch Chromium on session start
+    # IMPORTANT: Create a completely new .xsession file with NO exec commands for applications
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
-    echo 'exec fluxbox &' >> /home/${XRDP_USER}/.xsession && \
+    echo 'fluxbox &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
-    echo 'exec /usr/bin/chromium --no-sandbox --disable-dev-shm-usage "${STARTING_WEBSITE_URL}"' >> /home/${XRDP_USER}/.xsession && \
+    echo '/usr/bin/chromium --no-sandbox --disable-dev-shm-usage  --start-maximized "${STARTING_WEBSITE_URL}" &' >> /home/${XRDP_USER}/.xsession && \
+    echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
+    echo '/opt/onlyoffice/squashfs-root/AppRun --window-state=maximized &' >> /home/${XRDP_USER}/.xsession && \
+    echo 'wait' >> /home/${XRDP_USER}/.xsession && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
     apt autoremove --purge -y && \
