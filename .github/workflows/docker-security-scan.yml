@@ -1,0 +1,140 @@
+name: Docker Security Scan
+
+on:
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  security-scan:
+    name: Docker Build and Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: debian.dockerfile
+          push: false
+          load: true
+          tags: test-image:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Get image size
+        id: image-size
+        run: |
+          SIZE=$(docker image inspect test-image:${{ github.sha }} --format='{{.Size}}')
+          SIZE_MB=$(echo "scale=2; $SIZE/1024/1024" | bc)
+          echo "size=$SIZE_MB MB" >> $GITHUB_OUTPUT
+          
+      - name: Check image health
+        id: image-health
+        run: |
+          if docker run --rm --entrypoint sh test-image:${{ github.sha }} -c "exit 0"; then
+            echo "status=✅ Image is healthy" >> $GITHUB_OUTPUT
+          else
+            echo "status=❌ Image health check failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Trivy vulnerability scanner
+        id: trivy-scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: test-image:${{ github.sha }}
+          format: 'table'
+          output: 'trivy-results.txt'
+          severity: 'CRITICAL,HIGH'
+          
+      - name: Generate Trivy SARIF output
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: test-image:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          
+      - name: Count vulnerabilities
+        id: count-vulns
+        run: |
+          CRITICAL=$(grep -c "CRITICAL" trivy-results.txt || echo 0)
+          HIGH=$(grep -c "HIGH" trivy-results.txt || echo 0)
+          MEDIUM=$(grep -c "MEDIUM" trivy-results.txt || echo 0)
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "high=$HIGH" >> $GITHUB_OUTPUT
+          echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
+          
+      - name: Create PR comment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            let trivyOutput = '';
+            try {
+              const trivyFile = fs.readFileSync('trivy-results.txt', 'utf8');
+              trivyOutput = '```\n' + trivyFile.substring(0, 10000) + '\n```';
+              if (trivyFile.length > 10000) {
+                trivyOutput += '\n... (output truncated)';
+              }
+            } catch (error) {
+              trivyOutput = 'Error reading vulnerability scan results.';
+            }
+            
+            const imageSize = process.env.IMAGE_SIZE;
+            const imageHealth = process.env.IMAGE_HEALTH;
+            const criticalCount = process.env.CRITICAL_COUNT;
+            const highCount = process.env.HIGH_COUNT;
+            const mediumCount = process.env.MEDIUM_COUNT;
+            
+            const securityStatus = criticalCount > 0 || highCount > 0 
+              ? '❌ Security issues found' 
+              : '✅ No critical/high vulnerabilities';
+            
+            const body = `## Docker Image Analysis
+            
+            ### Image Status
+            - ${imageHealth}
+            - Image Size: ${imageSize}
+            - Security Status: ${securityStatus}
+            
+            ### Vulnerability Summary
+            - Critical: ${criticalCount}
+            - High: ${highCount}
+            - Medium: ${mediumCount}
+            
+            <details>
+            <summary>View Full Security Scan Results</summary>
+            
+            ${trivyOutput}
+            </details>
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+        env:
+          IMAGE_SIZE: ${{ steps.image-size.outputs.size }}
+          IMAGE_HEALTH: ${{ steps.image-health.outputs.status }}
+          CRITICAL_COUNT: ${{ steps.count-vulns.outputs.critical }}
+          HIGH_COUNT: ${{ steps.count-vulns.outputs.high }}
+          MEDIUM_COUNT: ${{ steps.count-vulns.outputs.medium }}

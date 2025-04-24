@@ -52,3 +52,36 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Check image health
+        id: image-health
+        run: |
+          if docker run --rm --entrypoint sh test-image:${{ github.sha }} -c "exit 0"; then
+            echo "status=✅ Image is healthy" >> $GITHUB_OUTPUT
+          else
+            echo "status=❌ Image health check failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Trivy vulnerability scanner
+        id: trivy-scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: test-image:${{ github.sha }}
+          format: 'table'
+          output: 'trivy-results.txt'
+          severity: 'CRITICAL,HIGH'
+          
+      - name: Generate Trivy SARIF output
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: test-image:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          
