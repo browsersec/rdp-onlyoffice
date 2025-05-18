@@ -6,6 +6,7 @@ if [ "$VNC_PASSWORD" ]; then
     sed -i "s/^\(command.*x11vnc.*\)$/\1 -passwd '$VNC_PASSWORD'/" /app/conf.d/x11vnc.conf
 fi
 
+
 # Set up agent if enabled
 if [ "$RUN_AGENT" = "true" ]; then
     if [ -f /app/agent ]; then

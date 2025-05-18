@@ -71,15 +71,15 @@ RUN set -e; \
     chmod u+s /bin/fusermount && \
     # Create .xsession file with agent run at the start
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
-    echo 'if [ "$RUN_AGENT" = "true" ] && [ -x /usr/local/bin/agent ]; then' >> /home/${XRDP_USER}/.xsession && \
-    echo '  nohup /usr/local/bin/agent > /dev/null 2>&1 &' >> /home/${XRDP_USER}/.xsession && \
     echo '  sleep 2' >> /home/${XRDP_USER}/.xsession && \
     echo 'fi' >> /home/${XRDP_USER}/.xsession && \
     echo 'fluxbox &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
+    echo '  nohup /usr/local/bin/agent > /dev/null 2>&1 &' >> /home/${XRDP_USER}/.xsession && \
     echo '/opt/onlyoffice/squashfs-root/AppRun "/home/${XRDP_USER}/Documents/demo.docx" &' >> /home/${XRDP_USER}/.xsession && \
-    echo 'while true; do sleep 60; done' >> /home/${XRDP_USER}/.xsession && \
+    echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
+    echo 'exit 0' >> /home/${XRDP_USER}/.xsession && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
     apt autoremove --purge -y && \
