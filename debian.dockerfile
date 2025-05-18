@@ -81,8 +81,8 @@ RUN set -e; \
     echo 'if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then' >> /home/${XRDP_USER}/.xsession && \
     echo '  eval $(dbus-launch --sh-syntax --exit-with-session)' >> /home/${XRDP_USER}/.xsession && \
     echo 'fi' >> /home/${XRDP_USER}/.xsession && \
-    echo 'exec startlxde' >> /home/${XRDP_USER}/.xsession && \
     echo '/usr/local/bin/agent &' >> /home/${XRDP_USER}/.xsession && \
+    echo 'exec startlxde' >> /home/${XRDP_USER}/.xsession && \
     # Disable bottom panel by creating empty panel config
     echo "# Empty panel configuration" > /home/${XRDP_USER}/.config/lxpanel/LXDE/panels/panel && \
     # Ensure proper permissions
