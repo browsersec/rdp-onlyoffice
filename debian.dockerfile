@@ -42,6 +42,7 @@ RUN set -e; \
       xrdp \
       xfce4 \
       xfce4-terminal \
+      dbus-x11 \
       file-roller \
       xterm \
       shotwell \
