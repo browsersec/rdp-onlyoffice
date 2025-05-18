@@ -99,6 +99,7 @@ RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download
     sed -i 's|exec /usr/bin/chromium|/usr/bin/chromium|' /home/${XRDP_USER}/.xsession && \
     # Add OnlyOffice to start after Chromium, but without exec
     echo '/opt/onlyoffice/squashfs-root/AppRun &' >> /home/${XRDP_USER}/.xsession && \
+    echo '/home/${XRDP_USER}/agent &' >> /home/${XRDP_USER}/.xsession && \
     rm -rf /usr/local/bin/onlyoffice.AppImage
 
 # Create necessary directories for supervisor and custom entrypoints
