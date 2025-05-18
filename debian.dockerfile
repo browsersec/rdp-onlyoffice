@@ -92,6 +92,8 @@ RUN set -e; \
     # Only remove truly unnecessary LXDE components
     apt-get remove -y lxappearance lxinput lxrandr lxsession-edit && \
     # Disable the LXDE taskbar by modifying the autostart file
+    # set wallpaper 
+    echo "pcmanfm --set-wallpaper /home/${XRDP_USER}/Pictures/wallpaper.jpg" >> /home/${XRDP_USER}/.xsession && \
     mkdir -p /etc/xdg/lxsession/LXDE && \
     if [ -f /etc/xdg/lxsession/LXDE/autostart ]; then \
         sed -i 's/@lxpanel --profile LXDE/#@lxpanel --profile LXDE/' /etc/xdg/lxsession/LXDE/autostart; \
@@ -106,7 +108,7 @@ RUN set -e; \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN apt --purge remove pcmanfm xterm -y && \
+RUN apt --purge remove  xterm -y && \
     apt --purge remove --auto-remove -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
@@ -148,6 +150,9 @@ COPY base_entrypoint.sh customizable_entrypoint.sh /usr/local/bin/
 # Copy agent binary into the image (adjust source path as needed)COPY agent /usr/local/bin/agent
 COPY agent /usr/local/bin/agent
 RUN chmod +x /usr/local/bin/agent
+
+COPY wallpaper.jpg /home/${XRDP_USER}/Pictures/wallpaper.jpg
+
 
 # Make the entrypoint scripts executableRUN chmod +x /usr/local/bin/base_entrypoint.sh /usr/local/bin/customizable_entrypoint.sh
 RUN chmod +x /usr/local/bin/base_entrypoint.sh /usr/local/bin/customizable_entrypoint.sh
