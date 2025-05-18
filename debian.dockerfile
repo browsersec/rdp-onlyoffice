@@ -74,10 +74,7 @@ RUN set -e; \
     rm -f /home/${XRDP_USER}/.xsession && \
     echo '#!/bin/bash' > /home/${XRDP_USER}/.xsession && \
     echo 'export XDG_CURRENT_DESKTOP=XFCE' >> /home/${XRDP_USER}/.xsession && \
-    echo 'dbus-launch xfwm4 &' >> /home/${XRDP_USER}/.xsession && \
-    echo 'dbus-launch xfdesktop &' >> /home/${XRDP_USER}/.xsession && \
-    echo '/usr/local/bin/agent &' >> /home/${XRDP_USER}/.xsession && \
-    echo 'exec sleep infinity' >> /home/${XRDP_USER}/.xsession && \
+    echo 'exec dbus-launch startxfce4 --disable-wm-check' >> /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
     # Create XFCE minimal config
     mkdir -p /home/${XRDP_USER}/.config/xfce4/xfconf/xfce-perchannel-xml && \
@@ -87,17 +84,16 @@ RUN set -e; \
     chown -R ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.config && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
-    apt autoremove --purge -y && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN apt-get remove -y \
+    # Remove xfce4-session and related packages
+    apt-get remove -y \
     thunar \
     xfce4-appfinder \
     xfce4-panel \
-    xfce4-session \
     xfce4-settings \
-    xfconf 
+    xfconf && \
+    apt autoremove --purge -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /home/${XRDP_USER}/Documents && \
     chown -R ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/Documents && \
@@ -168,14 +164,10 @@ COPY conf.d/xrdp.conf conf.d/xterm.conf /app/conf.d/
 COPY base_entrypoint.sh customizable_entrypoint.sh /usr/local/bin/
 # Copy agent binary into the image (adjust source path as needed)COPY agent /usr/local/bin/agent
 COPY agent /usr/local/bin/agent
-RUN chmod +x /usr/local/bin/agent
-
-# Make the entrypoint scripts executableRUN chmod +x /usr/local/bin/base_entrypoint.sh /usr/local/bin/customizable_entrypoint.sh
 RUN chmod +x /usr/local/bin/base_entrypoint.sh /usr/local/bin/customizable_entrypoint.sh
 
-
-# Expose the XRDP port
 EXPOSE ${XRDP_PORT}
-# Set tini as the entrypoint and the custom script as the commandENTRYPOINT ["/usr/bin/tini", "--"]
+# Expose the XRDP port
+# Set tini as the entrypoint and the custom script as the command
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/usr/local/bin/customizable_entrypoint.sh"]
