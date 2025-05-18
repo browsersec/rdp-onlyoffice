@@ -76,7 +76,7 @@ RUN set -e; \
     echo 'fluxbox &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
-    echo '  nohup /usr/local/bin/agent > /dev/null 2>&1 &' >> /home/${XRDP_USER}/.xsession && \
+    # echo '  nohup /usr/local/bin/agent > /dev/null 2>&1 &' >> /home/${XRDP_USER}/.xsession && \
     echo '/opt/onlyoffice/squashfs-root/AppRun "/home/${XRDP_USER}/Documents/demo.docx" &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
     echo 'exit 0' >> /home/${XRDP_USER}/.xsession && \
