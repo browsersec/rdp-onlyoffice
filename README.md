@@ -1,12 +1,11 @@
 # xRDP-OnlyOffice
 
-A minimal Debian-based Docker image providing a remote desktop environment with XRDP, Chromium browser, and OnlyOffice Desktop Editors. Designed for secure, browser-based document editing and remote access.
+A minimal Debian-based Docker image providing a remote desktop environment with XRDP and OnlyOffice Desktop Editors. Designed for secure document editing and remote access.
 
 ## Features
 
 - **XRDP**: Remote desktop access via RDP protocol.
 - **Fluxbox**: Lightweight window manager.
-- **Chromium**: Web browser auto-starts on login.
 - **OnlyOffice Desktop Editors**: Office suite for editing documents, spreadsheets, and presentations.
 - **Custom Entrypoints**: Run custom scripts at container startup.
 - **Supervisor**: Manages all services.
@@ -42,7 +41,6 @@ Environment variables (with defaults):
 - `LC_ALL` (default: `C.UTF-8`)
 - `CUSTOMIZE` (default: `false`)
 - `CUSTOM_ENTRYPOINTS_DIR` (default: `/app/custom_entrypoints_scripts`)
-- `AUTO_START_BROWSER` (default: `true`)
 - `AUTO_START_XTERM` (default: `true`)
 - `XRDP_PORT` (default: `3389`)
 
@@ -57,7 +55,6 @@ Supported script types: `.sh` (bash), `.py` (python3).
 - `debian.dockerfile` - Docker build instructions.
 - `supervisord.conf` - Supervisor configuration.
 - `conf.d/` - Supervisor program configs.
-- `browser_conf/` - Browser supervisor configs.
 - `base_entrypoint.sh` - Main entrypoint script.
 - `customizable_entrypoint.sh` - Entrypoint for custom startup logic.
 - `custom_entrypoints_scripts/` - Place your custom scripts here.

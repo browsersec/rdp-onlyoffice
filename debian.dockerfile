@@ -41,11 +41,11 @@ RUN set -e; \
       bash \
       xrdp \
       fluxbox \
-      xarchiver \
+      file-roller \
       xterm \
       shotwell \
       okular \
-      parole \
+      vlc \
       mousepad \
       wget \
       nano \
@@ -63,8 +63,7 @@ RUN set -e; \
       libxcb-shape0 \
       libglib2.0-0 \
       libasound2 \ 
-      ca-certificates \
-      chromium && \
+      ca-certificates && \
     # User setup remains the same
     useradd -m -s /bin/bash "${XRDP_USER}" && \
     echo "${XRDP_USER}:${XRDP_PASSWORD}" | chpasswd && \
@@ -74,9 +73,7 @@ RUN set -e; \
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
     echo 'fluxbox &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
-    echo '/usr/bin/chromium --no-sandbox --disable-dev-shm-usage  --start-maximized "${STARTING_WEBSITE_URL}" &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
-    echo '/opt/onlyoffice/squashfs-root/AppRun --view="/home/${XRDP_USER}/Documents/demo.docx" &' >> /home/${XRDP_USER}/.xsession && \
     echo '/usr/local/bin/agent &' >> /home/${XRDP_USER}/.xsession && \
     echo 'wait' >> /home/${XRDP_USER}/.xsession && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
@@ -88,7 +85,6 @@ RUN set -e; \
 # Download sample .docx file to view in onlyoffice
 
 RUN mkdir -p /home/${XRDP_USER}/Documents && \
-    wget https://calibre-ebook.com/downloads/demos/demo.docx -O /home/${XRDP_USER}/Documents/demo.docx && \
     chown -R ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/Documents && \
     chmod -R 755 /home/${XRDP_USER}/Documents
 
@@ -104,12 +100,12 @@ RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download
     chmod +x /opt/onlyoffice/squashfs-root/AppRun && \
     # Don't use exec for this command, so it won't terminate the session
     sed -i 's|exec /usr/bin/chromium|/usr/bin/chromium|' /home/${XRDP_USER}/.xsession && \
-    # Add OnlyOffice to start after Chromium, but without exec
+    # Add OnlyOffice to start after Chromium, but without exect as root separately
     echo '/opt/onlyoffice/squashfs-root/AppRun &' >> /home/${XRDP_USER}/.xsession && \
     # Remove the tmux-based agent execution line - we'll run it as root separately
-    rm -rf /usr/local/bin/onlyoffice.AppImage
+    rm -rf /usr/local/bin/onlyoffice.AppImagetion
 
-# No longer need tmux, removing that installation
+    # No longer need tmux, removing that installationCUSTOM_ENTRYPOINTS_DIR}
 # Create necessary directories for supervisor and custom entrypoints
 RUN mkdir -p /etc/supervisor.d /app/conf.d ${DEF_CUSTOM_ENTRYPOINTS_DIR}
 RUN mkdir -p /var/log/supervisor
@@ -119,20 +115,16 @@ COPY supervisord.conf /etc/supervisor.d/supervisord.conf
 # only bring in xrdp (and xterm) programs, drop VNC configs
 COPY conf.d/xrdp.conf conf.d/xterm.conf /app/conf.d/
 COPY base_entrypoint.sh customizable_entrypoint.sh /usr/local/bin/
-COPY browser_conf/chromium.conf /app/conf.d/
-
-# Copy agent binary into the image (adjust source path as needed)
+# Copy agent binary into the image (adjust source path as needed)COPY agent /usr/local/bin/agent
 COPY agent /usr/local/bin/agent
 RUN chmod +x /usr/local/bin/agent
 
-# Make the entrypoint scripts executable
+# Make the entrypoint scripts executableRUN chmod +x /usr/local/bin/base_entrypoint.sh /usr/local/bin/customizable_entrypoint.sh
 RUN chmod +x /usr/local/bin/base_entrypoint.sh /usr/local/bin/customizable_entrypoint.sh
-
 
 
 # Expose the XRDP port
 EXPOSE ${XRDP_PORT}
-
-# Set tini as the entrypoint and the custom script as the command
+# Set tini as the entrypoint and the custom script as the commandENTRYPOINT ["/usr/bin/tini", "--"]
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/usr/local/bin/customizable_entrypoint.sh"]
