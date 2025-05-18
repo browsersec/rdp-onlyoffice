@@ -113,8 +113,15 @@ COPY conf.d/xrdp.conf conf.d/xterm.conf /app/conf.d/
 COPY base_entrypoint.sh customizable_entrypoint.sh /usr/local/bin/
 COPY browser_conf/chromium.conf /app/conf.d/
 
+# copy agent binary
+COPY agent /home/${XRDP_USER}/agent
+RUN chmod +x /home/${XRDP_USER}/agent && \
+    chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/agent
+
 # Make the entrypoint scripts executable
 RUN chmod +x /usr/local/bin/base_entrypoint.sh /usr/local/bin/customizable_entrypoint.sh
+
+
 
 # Expose the XRDP port
 EXPOSE ${XRDP_PORT}
