@@ -46,7 +46,7 @@ RUN set -e; \
       shotwell \
       okular \
       parole \
-      leafpad \
+      mousepad \
       wget \
       nano \
       fuse \
