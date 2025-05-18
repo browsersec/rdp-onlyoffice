@@ -122,7 +122,7 @@ RUN echo '[program:agent]\n\
 command=/usr/local/bin/run_agent.sh\n\
 autostart=true\n\
 autorestart=true\n\
-user=rdpuser\n\
+user=root\n\
 environment=DISPLAY=":10.0"\n\
 priority=30\n' > /app/conf.d/agent.conf
 
