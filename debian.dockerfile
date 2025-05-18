@@ -86,7 +86,7 @@ RUN set -e; \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
     # Remove unnecessary LXDE components to avoid bloatware
-    apt-get remove -y lxde-common lxde lxterminal lxappearance lxhotkey lxinput lxrandr lxsession-edit && \
+    apt-get remove -y lxde-common lxde  lxappearance  lxinput lxrandr lxsession-edit && \
     apt autoremove --purge -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
