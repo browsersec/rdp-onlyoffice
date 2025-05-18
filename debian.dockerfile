@@ -41,6 +41,8 @@ RUN set -e; \
       bash \
       xrdp \
       lxde-core \
+      lxsession \
+      lxde-common \
       openbox \
       file-roller \
       xterm \
@@ -64,7 +66,8 @@ RUN set -e; \
       libxcb-shape0 \
       libglib2.0-0 \
       libasound2 \ 
-      ca-certificates && \
+      ca-certificates \
+      dbus-x11 && \
     # User setup remains the same
     useradd -m -s /bin/bash "${XRDP_USER}" && \
     echo "${XRDP_USER}:${XRDP_PASSWORD}" | chpasswd && \
@@ -72,21 +75,21 @@ RUN set -e; \
     chmod u+s /bin/fusermount && \
     # Create LXDE configuration to disable bottom panel
     mkdir -p /home/${XRDP_USER}/.config/lxpanel/LXDE/panels && \
-    # Create a simple .xsession using lightweight LXDE
+    # Create a simple .xsession with proper LXDE startup
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
-    echo 'startlxde &' >> /home/${XRDP_USER}/.xsession && \
-    echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
-    echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
-    echo '/usr/local/bin/agent &' >> /home/${XRDP_USER}/.xsession && \
-    echo 'wait' >> /home/${XRDP_USER}/.xsession && \
+    echo '# Start D-Bus if not running' >> /home/${XRDP_USER}/.xsession && \
+    echo 'if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then' >> /home/${XRDP_USER}/.xsession && \
+    echo '  eval $(dbus-launch --sh-syntax --exit-with-session)' >> /home/${XRDP_USER}/.xsession && \
+    echo 'fi' >> /home/${XRDP_USER}/.xsession && \
+    echo 'exec startlxde' >> /home/${XRDP_USER}/.xsession && \
     # Disable bottom panel by creating empty panel config
     echo "# Empty panel configuration" > /home/${XRDP_USER}/.config/lxpanel/LXDE/panels/panel && \
     # Ensure proper permissions
     chown -R ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.config && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
-    # Remove unnecessary LXDE components to avoid bloatware
-    apt-get remove -y lxde-common lxde  lxappearance  lxinput lxrandr lxsession-edit && \
+    # Only remove truly unnecessary LXDE components
+    apt-get remove -y lxappearance lxinput lxrandr lxsession-edit && \
     apt autoremove --purge -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
