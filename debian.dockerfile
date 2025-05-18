@@ -98,7 +98,7 @@ RUN apt-get remove -y \
     xfce4-session \
     xfce4-settings \
     xfconf && \
-    apt-get install xfwm4 xfdesktop -qqy
+    apt-get install  xfdesktop -qqy
 
 RUN mkdir -p /home/${XRDP_USER}/Documents && \
     chown -R ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/Documents && \
