@@ -106,7 +106,7 @@ RUN set -e; \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN apt --purge remove pcmanfm xterm  && \
+RUN apt --purge remove pcmanfm xterm -y && \
     apt --purge remove --auto-remove -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
