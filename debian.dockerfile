@@ -135,6 +135,8 @@ COPY browser_conf/chromium.conf /app/conf.d/
 
 # copy agent binary
 COPY agent /usr/local/bin/agent
+RUN chmod +x /usr/local/bin/agent
+RUN chown -R ${XRDP_USER}:${XRDP_USER} /usr/local/bin/agent
 
 
 # Make the entrypoint scripts executable
