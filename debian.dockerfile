@@ -41,11 +41,12 @@ RUN set -e; \
       bash \
       xrdp \
       fluxbox \
+      xarchiver \
       xterm \
       shotwell \
       okular \
-      vlc \
-      gedit \
+      parole \
+      leafpad \
       wget \
       nano \
       fuse \
