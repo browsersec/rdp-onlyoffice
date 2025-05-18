@@ -76,7 +76,6 @@ RUN set -e; \
     echo 'fluxbox &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
-    # echo '  nohup /usr/local/bin/agent > /dev/null 2>&1 &' >> /home/${XRDP_USER}/.xsession && \
     echo '/opt/onlyoffice/squashfs-root/AppRun "/home/${XRDP_USER}/Documents/demo.docx" &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
     echo 'exit 0' >> /home/${XRDP_USER}/.xsession && \
@@ -97,22 +96,24 @@ RUN mkdir -p /etc/fuse.conf.d && \
     echo "user_allow_other" > /etc/fuse.conf && \
     chmod 644 /etc/fuse.conf
 
+# Copy the agent file and make it executable
+COPY agent /usr/local/bin/agent
+RUN chmod +x /usr/local/bin/agent
+
 RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download/v8.3.3/DesktopEditors-x86_64.AppImage -O /usr/local/bin/onlyoffice.AppImage && \ 
     chmod +x /usr/local/bin/onlyoffice.AppImage && \ 
     mkdir -p /opt/onlyoffice && \
     cd /opt/onlyoffice && \
     /usr/local/bin/onlyoffice.AppImage --appimage-extract && \
     chmod +x /opt/onlyoffice/squashfs-root/AppRun && \
+    chmod +x /usr/local/bin/agent && \
     # Don't use exec for this command, so it won't terminate the session
     # Add OnlyOffice to start after Chromium, but without exec
-    echo '  nohup /usr/local/bin/agent > /dev/null 2>&1 &' >> /home/${XRDP_USER}/.xsession && \
+    echo ' /usr/local/bin/agent  &' >> /home/${XRDP_USER}/.xsession && \
     echo '  sleep 2' >> /home/${XRDP_USER}/.xsession && \
     echo '/opt/onlyoffice/squashfs-root/AppRun &' >> /home/${XRDP_USER}/.xsession && \
     rm -rf /usr/local/bin/onlyoffice.AppImage
 
-# Copy the agent file and make it executable
-COPY agent /usr/local/bin/agent
-RUN chmod +x /usr/local/bin/agent
 
 # Create necessary directories for supervisor and custom entrypoints
 RUN mkdir -p /etc/supervisor.d /app/conf.d ${DEF_CUSTOM_ENTRYPOINTS_DIR}
