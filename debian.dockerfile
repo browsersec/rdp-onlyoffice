@@ -41,7 +41,6 @@ RUN set -e; \
       bash \
       xrdp \
       xfce4 \
-      xfce4-terminal \
       dbus-x11 \
       file-roller \
       xterm \
@@ -72,15 +71,13 @@ RUN set -e; \
     adduser ${XRDP_USER} fuse && \
     chmod u+s /bin/fusermount && \
     # Setup XFCE in minimal headless mode (no panels, no UI elements)
+    rm -f /home/${XRDP_USER}/.xsession && \
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
-    echo 'xfconf-query -c xfce4-panel -p /panels -t int -s 0 -a' >> /home/${XRDP_USER}/.xsession && \
-    echo 'xfconf-query -c xfce4-desktop -p /backdrop -t string -s none' >> /home/${XRDP_USER}/.xsession && \
-    echo 'xfconf-query -c xfwm4 -p /general/use_compositing -t bool -s false' >> /home/${XRDP_USER}/.xsession && \
-    echo 'xfconf-query -c xsettings -p /Net/ThemeName -t string -s "Default"' >> /home/${XRDP_USER}/.xsession && \
-    echo 'startxfce4 --disable-wm-check &' >> /home/${XRDP_USER}/.xsession && \
-    echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
+    echo 'xfwm4 &' >> /home/${XRDP_USER}/.xsession && \
+    echo 'xfdesktop &' >> /home/${XRDP_USER}/.xsession && \
     echo '/usr/local/bin/agent &' >> /home/${XRDP_USER}/.xsession && \
     echo 'wait' >> /home/${XRDP_USER}/.xsession && \
+    chmod +x /home/${XRDP_USER}/.xsession && \
     # Create XFCE minimal config
     mkdir -p /home/${XRDP_USER}/.config/xfce4/xfconf/xfce-perchannel-xml && \
     echo '<?xml version="1.0" encoding="UTF-8"?><channel name="xfce4-panel" version="1.0"><property name="panels" type="empty"/></channel>' > /home/${XRDP_USER}/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml && \
@@ -93,7 +90,14 @@ RUN set -e; \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Download sample .docx file to view in onlyoffice
+RUN apt-get remove -y \
+    thunar \
+    xfce4-appfinder \
+    xfce4-panel \
+    xfce4-session \
+    xfce4-settings \
+    xfce4-terminal \
+    xfconf
 
 RUN mkdir -p /home/${XRDP_USER}/Documents && \
     chown -R ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/Documents && \
