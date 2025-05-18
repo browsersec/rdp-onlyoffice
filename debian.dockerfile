@@ -107,24 +107,35 @@ RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download
 RUN mkdir -p /etc/supervisor.d /app/conf.d ${DEF_CUSTOM_ENTRYPOINTS_DIR}
 RUN mkdir -p /var/log/supervisor
 
-# Copy agent binary to a system location for root execution
+# Copy agent binary once (removing the duplicate copy)
 COPY agent /usr/local/bin/agent
 RUN chmod +x /usr/local/bin/agent
 
-# Create a script to run the agent as root with the correct display
+# Create a more robust script to run the agent as root with the correct display
 RUN echo '#!/bin/bash\n\
 export DISPLAY=:10.0\n\
-/usr/local/bin/agent &\n' > /usr/local/bin/run_agent.sh && \
+# Allow root to use the X display\n\
+xhost +local:root\n\
+# Use nohup to ensure the process stays running\n\
+nohup /usr/local/bin/agent > /var/log/agent.log 2>&1 &\n\
+# Store the PID for potential management\n\
+echo $! > /var/run/agent.pid\n' > /usr/local/bin/run_agent.sh && \
     chmod +x /usr/local/bin/run_agent.sh
 
-# Create a supervisor config for the agent
+# Create a supervisor config for the agent with improved settings
 RUN echo '[program:agent]\n\
 command=/usr/local/bin/run_agent.sh\n\
 autostart=true\n\
 autorestart=true\n\
 user=root\n\
 environment=DISPLAY=":10.0"\n\
-priority=30\n' > /app/conf.d/agent.conf
+priority=30\n\
+startsecs=10\n\
+startretries=5\n' > /app/conf.d/agent.conf
+
+# Also add xhost to packages
+RUN apt-get update && apt-get install -qqy x11-xserver-utils && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy configuration files
 COPY supervisord.conf /etc/supervisor.d/supervisord.conf
@@ -132,12 +143,6 @@ COPY supervisord.conf /etc/supervisor.d/supervisord.conf
 COPY conf.d/xrdp.conf conf.d/xterm.conf /app/conf.d/
 COPY base_entrypoint.sh customizable_entrypoint.sh /usr/local/bin/
 COPY browser_conf/chromium.conf /app/conf.d/
-
-# copy agent binary
-COPY agent /usr/local/bin/agent
-RUN chmod +x /usr/local/bin/agent
-RUN chown -R ${XRDP_USER}:${XRDP_USER} /usr/local/bin/agent
-
 
 # Make the entrypoint scripts executable
 RUN chmod +x /usr/local/bin/base_entrypoint.sh /usr/local/bin/customizable_entrypoint.sh
