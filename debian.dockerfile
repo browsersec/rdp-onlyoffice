@@ -99,17 +99,32 @@ RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download
     sed -i 's|exec /usr/bin/chromium|/usr/bin/chromium|' /home/${XRDP_USER}/.xsession && \
     # Add OnlyOffice to start after Chromium, but without exec
     echo '/opt/onlyoffice/squashfs-root/AppRun &' >> /home/${XRDP_USER}/.xsession && \
-    # Replace direct agent execution with tmux
-    echo 'tmux new-session -d -s agent_session "/home/${XRDP_USER}/agent"' >> /home/${XRDP_USER}/.xsession && \
+    # Remove the tmux-based agent execution line - we'll run it as root separately
     rm -rf /usr/local/bin/onlyoffice.AppImage
 
-# Install tmux for background process management
-RUN apt-get update && apt-get install -qqy tmux && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
+# No longer need tmux, removing that installation
 # Create necessary directories for supervisor and custom entrypoints
 RUN mkdir -p /etc/supervisor.d /app/conf.d ${DEF_CUSTOM_ENTRYPOINTS_DIR}
 RUN mkdir -p /var/log/supervisor
+
+# Copy agent binary to a system location for root execution
+COPY agent /usr/local/bin/agent
+RUN chmod +x /usr/local/bin/agent
+
+# Create a script to run the agent as root with the correct display
+RUN echo '#!/bin/bash\n\
+export DISPLAY=:10.0\n\
+/usr/local/bin/agent &\n' > /usr/local/bin/run_agent.sh && \
+    chmod +x /usr/local/bin/run_agent.sh
+
+# Create a supervisor config for the agent
+RUN echo '[program:agent]\n\
+command=/usr/local/bin/run_agent.sh\n\
+autostart=true\n\
+autorestart=true\n\
+user=rdpuser\n\
+environment=DISPLAY=":10.0"\n\
+priority=30\n' > /app/conf.d/agent.conf
 
 # Copy configuration files
 COPY supervisord.conf /etc/supervisor.d/supervisord.conf
@@ -119,9 +134,8 @@ COPY base_entrypoint.sh customizable_entrypoint.sh /usr/local/bin/
 COPY browser_conf/chromium.conf /app/conf.d/
 
 # copy agent binary
-COPY agent /home/${XRDP_USER}/agent
-RUN chmod +x /home/${XRDP_USER}/agent && \
-    chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/agent
+COPY agent /usr/local/bin/agent
+
 
 # Make the entrypoint scripts executable
 RUN chmod +x /usr/local/bin/base_entrypoint.sh /usr/local/bin/customizable_entrypoint.sh
