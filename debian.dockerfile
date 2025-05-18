@@ -13,6 +13,7 @@ ARG DEF_AUTO_START_XTERM=true
 ARG DEF_DEBIAN_FRONTEND=noninteractive
 ARG DEF_XRDP_USER=rdpuser
 ARG DEF_XRDP_PASSWORD=money4band
+ARG DEF_RUN_AGENT=true
 ENV XRDP_USER=${DEF_XRDP_USER} XRDP_PASSWORD=${DEF_XRDP_PASSWORD}
 
 # Set environment variables with default values
@@ -25,7 +26,8 @@ ENV \
     AUTO_START_BROWSER=${DEF_AUTO_START_BROWSER} \
     AUTO_START_XTERM=${DEF_AUTO_START_XTERM} \
     DEBIAN_FRONTEND=${DEF_DEBIAN_FRONTEND} \
-    XRDP_PORT=${DEF_XRDP_PORT}
+    XRDP_PORT=${DEF_XRDP_PORT} \
+    RUN_AGENT=${DEF_RUN_AGENT}
 
 RUN groupadd fuse 
 
@@ -64,13 +66,17 @@ RUN set -e; \
     echo "${XRDP_USER}:${XRDP_PASSWORD}" | chpasswd && \
     adduser ${XRDP_USER} fuse && \
     chmod u+s /bin/fusermount && \
-    # IMPORTANT: Create a completely new .xsession file with NO exec commands for applications
+    # Create .xsession file with agent run at the start
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
+    echo 'if [ "$RUN_AGENT" = "true" ] && [ -x /usr/local/bin/agent ]; then' >> /home/${XRDP_USER}/.xsession && \
+    echo '  /usr/local/bin/agent &' >> /home/${XRDP_USER}/.xsession && \
+    echo '  sleep 2' >> /home/${XRDP_USER}/.xsession && \
+    echo 'fi' >> /home/${XRDP_USER}/.xsession && \
     echo 'fluxbox &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
     echo '/usr/bin/chromium --no-sandbox --disable-dev-shm-usage  --start-maximized "${STARTING_WEBSITE_URL}" &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
-    echo '/opt/onlyoffice/squashfs-root/AppRun --view="/home/${XRDP_USER}/Documents/demo.docx" &' >> /home/${XRDP_USER}/.xsession && \
+    echo '/opt/onlyoffice/squashfs-root/AppRun "/home/${XRDP_USER}/Documents/demo.docx &' >> /home/${XRDP_USER}/.xsession && \
     echo 'wait' >> /home/${XRDP_USER}/.xsession && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
@@ -100,6 +106,10 @@ RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download
     # Add OnlyOffice to start after Chromium, but without exec
     echo '/opt/onlyoffice/squashfs-root/AppRun &' >> /home/${XRDP_USER}/.xsession && \
     rm -rf /usr/local/bin/onlyoffice.AppImage
+
+# Copy the agent file and make it executable
+COPY agent /usr/local/bin/agent
+RUN chmod +x /usr/local/bin/agent
 
 # Create necessary directories for supervisor and custom entrypoints
 RUN mkdir -p /etc/supervisor.d /app/conf.d ${DEF_CUSTOM_ENTRYPOINTS_DIR}
