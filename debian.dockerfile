@@ -63,8 +63,7 @@ RUN set -e; \
       libxcb-shape0 \
       libglib2.0-0 \
       libasound2 \ 
-      ca-certificates \
-      chromium && \
+      ca-certificates && \
     # User setup remains the same
     useradd -m -s /bin/bash "${XRDP_USER}" && \
     echo "${XRDP_USER}:${XRDP_PASSWORD}" | chpasswd && \
@@ -73,15 +72,14 @@ RUN set -e; \
     # Create .xsession file with agent run at the start
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
     echo 'if [ "$RUN_AGENT" = "true" ] && [ -x /usr/local/bin/agent ]; then' >> /home/${XRDP_USER}/.xsession && \
-    echo '  /usr/local/bin/agent &' >> /home/${XRDP_USER}/.xsession && \
+    echo '  nohup /usr/local/bin/agent > /dev/null 2>&1 &' >> /home/${XRDP_USER}/.xsession && \
     echo '  sleep 2' >> /home/${XRDP_USER}/.xsession && \
     echo 'fi' >> /home/${XRDP_USER}/.xsession && \
     echo 'fluxbox &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
-    echo '/usr/bin/chromium --no-sandbox --disable-dev-shm-usage  --start-maximized "${STARTING_WEBSITE_URL}" &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
-    echo '/opt/onlyoffice/squashfs-root/AppRun "/home/${XRDP_USER}/Documents/demo.docx &' >> /home/${XRDP_USER}/.xsession && \
-    echo 'wait' >> /home/${XRDP_USER}/.xsession && \
+    echo '/opt/onlyoffice/squashfs-root/AppRun "/home/${XRDP_USER}/Documents/demo.docx" &' >> /home/${XRDP_USER}/.xsession && \
+    echo 'while true; do sleep 60; done' >> /home/${XRDP_USER}/.xsession && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
     apt autoremove --purge -y && \
@@ -106,8 +104,9 @@ RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download
     /usr/local/bin/onlyoffice.AppImage --appimage-extract && \
     chmod +x /opt/onlyoffice/squashfs-root/AppRun && \
     # Don't use exec for this command, so it won't terminate the session
-    sed -i 's|exec /usr/bin/chromium|/usr/bin/chromium|' /home/${XRDP_USER}/.xsession && \
     # Add OnlyOffice to start after Chromium, but without exec
+    echo '  nohup /usr/local/bin/agent > /dev/null 2>&1 &' >> /home/${XRDP_USER}/.xsession && \
+    echo '  sleep 2' >> /home/${XRDP_USER}/.xsession && \
     echo '/opt/onlyoffice/squashfs-root/AppRun &' >> /home/${XRDP_USER}/.xsession && \
     rm -rf /usr/local/bin/onlyoffice.AppImage
 
@@ -121,10 +120,9 @@ RUN mkdir -p /var/log/supervisor
 
 # Copy configuration files
 COPY supervisord.conf /etc/supervisor.d/supervisord.conf
-# only bring in xrdp (and xterm) programs, drop VNC configs
+# only bring in xrdp (and xterm) programs, drop VNC and browser configs
 COPY conf.d/xrdp.conf conf.d/xterm.conf /app/conf.d/
 COPY base_entrypoint.sh customizable_entrypoint.sh /usr/local/bin/
-COPY browser_conf/chromium.conf /app/conf.d/
 
 # Make the entrypoint scripts executable
 RUN chmod +x /usr/local/bin/base_entrypoint.sh /usr/local/bin/customizable_entrypoint.sh

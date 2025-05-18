@@ -1,15 +1,15 @@
 # xRDP-OnlyOffice
 
-A minimal Debian-based Docker image providing a remote desktop environment with XRDP, Chromium browser, and OnlyOffice Desktop Editors. Designed for secure, browser-based document editing and remote access.
+A minimal Debian-based Docker image providing a remote desktop environment with XRDP and OnlyOffice Desktop Editors. Designed for secure document editing and remote access.
 
 ## Features
 
 - **XRDP**: Remote desktop access via RDP protocol.
 - **Fluxbox**: Lightweight window manager.
-- **Chromium**: Web browser auto-starts on login.
 - **OnlyOffice Desktop Editors**: Office suite for editing documents, spreadsheets, and presentations.
 - **Custom Entrypoints**: Run custom scripts at container startup.
 - **Supervisor**: Manages all services.
+- **Background Agent**: Runs silently in the background.
 
 ## Usage
 
@@ -25,7 +25,6 @@ docker build -f debian.dockerfile -t rdp-onlyoffice2 .
 docker run -d -p 3389:3389 \
   -e XRDP_USER=myuser \
   -e XRDP_PASSWORD=mypassword \
-  -e STARTING_WEBSITE_URL=https://your-homepage.com \
   rdp-onlyoffice2
 ```
 
@@ -37,12 +36,10 @@ Environment variables (with defaults):
 
 - `XRDP_USER` (default: `rdpuser`)
 - `XRDP_PASSWORD` (default: `money4band`)
-- `STARTING_WEBSITE_URL` (default: `https://www.google.com`)
 - `LANG` (default: `en_US.UTF-8`)
 - `LC_ALL` (default: `C.UTF-8`)
 - `CUSTOMIZE` (default: `false`)
 - `CUSTOM_ENTRYPOINTS_DIR` (default: `/app/custom_entrypoints_scripts`)
-- `AUTO_START_BROWSER` (default: `true`)
 - `AUTO_START_XTERM` (default: `true`)
 - `XRDP_PORT` (default: `3389`)
 - `RUN_AGENT` (default: `true`) - Enables an agent process at X session start
