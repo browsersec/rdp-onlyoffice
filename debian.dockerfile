@@ -99,8 +99,13 @@ RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download
     sed -i 's|exec /usr/bin/chromium|/usr/bin/chromium|' /home/${XRDP_USER}/.xsession && \
     # Add OnlyOffice to start after Chromium, but without exec
     echo '/opt/onlyoffice/squashfs-root/AppRun &' >> /home/${XRDP_USER}/.xsession && \
-    echo '/home/${XRDP_USER}/agent &' >> /home/${XRDP_USER}/.xsession && \
+    # Replace direct agent execution with tmux
+    echo 'tmux new-session -d -s agent_session "/home/${XRDP_USER}/agent"' >> /home/${XRDP_USER}/.xsession && \
     rm -rf /usr/local/bin/onlyoffice.AppImage
+
+# Install tmux for background process management
+RUN apt-get update && apt-get install -qqy tmux && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories for supervisor and custom entrypoints
 RUN mkdir -p /etc/supervisor.d /app/conf.d ${DEF_CUSTOM_ENTRYPOINTS_DIR}
