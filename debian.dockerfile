@@ -42,6 +42,10 @@ RUN set -e; \
       xrdp \
       fluxbox \
       xterm \
+      shotwell \
+      okular \
+      vlc \
+      gedit \
       wget \
       nano \
       fuse \
