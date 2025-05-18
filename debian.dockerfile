@@ -40,7 +40,8 @@ RUN set -e; \
       supervisor \
       bash \
       xrdp \
-      fluxbox \
+      lxde-core \
+      openbox \
       file-roller \
       xterm \
       shotwell \
@@ -69,15 +70,23 @@ RUN set -e; \
     echo "${XRDP_USER}:${XRDP_PASSWORD}" | chpasswd && \
     adduser ${XRDP_USER} fuse && \
     chmod u+s /bin/fusermount && \
-    # IMPORTANT: Create a completely new .xsession file with NO exec commands for applications
+    # Create LXDE configuration to disable bottom panel
+    mkdir -p /home/${XRDP_USER}/.config/lxpanel/LXDE/panels && \
+    # Create a simple .xsession using lightweight LXDE
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
-    echo 'fluxbox &' >> /home/${XRDP_USER}/.xsession && \
+    echo 'startlxde &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
     echo '/usr/local/bin/agent &' >> /home/${XRDP_USER}/.xsession && \
     echo 'wait' >> /home/${XRDP_USER}/.xsession && \
+    # Disable bottom panel by creating empty panel config
+    echo "# Empty panel configuration" > /home/${XRDP_USER}/.config/lxpanel/LXDE/panels/panel && \
+    # Ensure proper permissions
+    chown -R ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.config && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
+    # Remove unnecessary LXDE components to avoid bloatware
+    apt-get remove -y lxde-common lxde lxterminal lxappearance lxhotkey lxinput lxrandr lxsession-edit && \
     apt autoremove --purge -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
