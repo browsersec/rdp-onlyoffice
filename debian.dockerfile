@@ -45,6 +45,10 @@ RUN set -e; \
       xterm \
       wget \
       nano \
+      eog \
+      xdg-utils \
+      okular \
+      file-roller \
       fuse \
       libfuse2 \
       libxkbcommon-x11-0 \
