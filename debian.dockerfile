@@ -96,7 +96,6 @@ RUN apt-get remove -y \
     xfce4-panel \
     xfce4-session \
     xfce4-settings \
-    xfce4-terminal \
     xfconf
 
 RUN mkdir -p /home/${XRDP_USER}/Documents && \
