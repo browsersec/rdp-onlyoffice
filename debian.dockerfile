@@ -72,9 +72,12 @@ RUN set -e; \
     chmod u+s /bin/fusermount && \
     # Setup XFCE in minimal headless mode (no panels, no UI elements)
     rm -f /home/${XRDP_USER}/.xsession && \
-    echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
+    echo '#!/bin/bash' > /home/${XRDP_USER}/.xsession && \
     echo 'export XDG_CURRENT_DESKTOP=XFCE' >> /home/${XRDP_USER}/.xsession && \
-    echo 'dbus-launch --exit-with-session sh -c "xfwm4 & xfdesktop & /usr/local/bin/agent & wait"' >> /home/${XRDP_USER}/.xsession && \
+    echo 'dbus-launch xfwm4 &' >> /home/${XRDP_USER}/.xsession && \
+    echo 'dbus-launch xfdesktop &' >> /home/${XRDP_USER}/.xsession && \
+    echo '/usr/local/bin/agent &' >> /home/${XRDP_USER}/.xsession && \
+    echo 'exec sleep infinity' >> /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
     # Create XFCE minimal config
     mkdir -p /home/${XRDP_USER}/.config/xfce4/xfconf/xfce-perchannel-xml && \
@@ -94,7 +97,8 @@ RUN apt-get remove -y \
     xfce4-panel \
     xfce4-session \
     xfce4-settings \
-    xfconf
+    xfconf && \
+    apt-get install xfwm4 xfdesktop -qqy
 
 RUN mkdir -p /home/${XRDP_USER}/Documents && \
     chown -R ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/Documents && \
