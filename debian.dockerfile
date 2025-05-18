@@ -40,7 +40,8 @@ RUN set -e; \
       supervisor \
       bash \
       xrdp \
-      fluxbox \
+      xfce4 \
+      xfce4-terminal \
       file-roller \
       xterm \
       shotwell \
@@ -69,13 +70,22 @@ RUN set -e; \
     echo "${XRDP_USER}:${XRDP_PASSWORD}" | chpasswd && \
     adduser ${XRDP_USER} fuse && \
     chmod u+s /bin/fusermount && \
-    # IMPORTANT: Create a completely new .xsession file with NO exec commands for applications
+    # Setup XFCE in minimal headless mode (no panels, no UI elements)
     echo '#!/bin/sh' > /home/${XRDP_USER}/.xsession && \
-    echo 'fluxbox &' >> /home/${XRDP_USER}/.xsession && \
+    echo 'xfconf-query -c xfce4-panel -p /panels -t int -s 0 -a' >> /home/${XRDP_USER}/.xsession && \
+    echo 'xfconf-query -c xfce4-desktop -p /backdrop -t string -s none' >> /home/${XRDP_USER}/.xsession && \
+    echo 'xfconf-query -c xfwm4 -p /general/use_compositing -t bool -s false' >> /home/${XRDP_USER}/.xsession && \
+    echo 'xfconf-query -c xsettings -p /Net/ThemeName -t string -s "Default"' >> /home/${XRDP_USER}/.xsession && \
+    echo 'startxfce4 --disable-wm-check &' >> /home/${XRDP_USER}/.xsession && \
     echo 'sleep 1' >> /home/${XRDP_USER}/.xsession && \
-    echo 'sleep 2' >> /home/${XRDP_USER}/.xsession && \
     echo '/usr/local/bin/agent &' >> /home/${XRDP_USER}/.xsession && \
     echo 'wait' >> /home/${XRDP_USER}/.xsession && \
+    # Create XFCE minimal config
+    mkdir -p /home/${XRDP_USER}/.config/xfce4/xfconf/xfce-perchannel-xml && \
+    echo '<?xml version="1.0" encoding="UTF-8"?><channel name="xfce4-panel" version="1.0"><property name="panels" type="empty"/></channel>' > /home/${XRDP_USER}/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml && \
+    echo '<?xml version="1.0" encoding="UTF-8"?><channel name="xfce4-desktop" version="1.0"><property name="backdrop" type="empty"><property name="screen0" type="empty"><property name="monitor0" type="empty"><property name="image-path" type="string" value="none"/><property name="last-image" type="string" value="none"/><property name="last-single-image" type="string" value="none"/></property></property></property></channel>' > /home/${XRDP_USER}/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml && \
+    echo '<?xml version="1.0" encoding="UTF-8"?><channel name="xfwm4" version="1.0"><property name="general" type="empty"><property name="use_compositing" type="bool" value="false"/></property></channel>' > /home/${XRDP_USER}/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml && \
+    chown -R ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.config && \
     chown ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.xsession && \
     chmod +x /home/${XRDP_USER}/.xsession && \
     apt autoremove --purge -y && \
@@ -102,10 +112,46 @@ RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download
     sed -i 's|exec /usr/bin/chromium|/usr/bin/chromium|' /home/${XRDP_USER}/.xsession && \
     # Add OnlyOffice to start after Chromium, but without exect as root separately
     echo '/opt/onlyoffice/squashfs-root/AppRun &' >> /home/${XRDP_USER}/.xsession && \
+    # Set OnlyOffice as the default application for office files
+    # mkdir -p /home/${XRDP_USER}/.config && \
+    # mkdir -p /home/${XRDP_USER}/.local/share/applications && \
+    # echo '[Desktop Entry]' > /home/${XRDP_USER}/.local/share/applications/onlyoffice.desktop && \
+    # echo 'Type=Application' >> /home/${XRDP_USER}/.local/share/applications/onlyoffice.desktop && \
+    # echo 'Name=OnlyOffice' >> /home/${XRDP_USER}/.local/share/applications/onlyoffice.desktop && \
+    # echo 'Exec=/opt/onlyoffice/squashfs-root/AppRun %f' >> /home/${XRDP_USER}/.local/share/applications/onlyoffice.desktop && \
+    # echo 'Icon=/opt/onlyoffice/squashfs-root/usr/share/icons/hicolor/256x256/apps/asc-de.png' >> /home/${XRDP_USER}/.local/share/applications/onlyoffice.desktop && \
+    # echo 'MimeType=application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;application/vnd.openxmlformats-officedocument.presentationml.presentation;application/msword;application/vnd.ms-excel;application/vnd.ms-powerpoint;application/vnd.oasis.opendocument.text;application/vnd.oasis.opendocument.spreadsheet;application/vnd.oasis.opendocument.presentation;application/rtf;text/plain;application/pdf;' >> /home/${XRDP_USER}/.local/share/applications/onlyoffice.desktop && \
+    # echo 'Categories=Office;' >> /home/${XRDP_USER}/.local/share/applications/onlyoffice.desktop && \
+    # echo '[Added Associations]' > /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.openxmlformats-officedocument.wordprocessingml.document=onlyoffice.desktop;' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet=onlyoffice.desktop;' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.openxmlformats-officedocument.presentationml.presentation=onlyoffice.desktop;' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/msword=onlyoffice.desktop;' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.ms-excel=onlyoffice.desktop;' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.ms-powerpoint=onlyoffice.desktop;' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.oasis.opendocument.text=onlyoffice.desktop;' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.oasis.opendocument.spreadsheet=onlyoffice.desktop;' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.oasis.opendocument.presentation=onlyoffice.desktop;' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/rtf=onlyoffice.desktop;' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'text/plain=onlyoffice.desktop;' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/pdf=onlyoffice.desktop;' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo '[Default Applications]' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.openxmlformats-officedocument.wordprocessingml.document=onlyoffice.desktop' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet=onlyoffice.desktop' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.openxmlformats-officedocument.presentationml.presentation=onlyoffice.desktop' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/msword=onlyoffice.desktop' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.ms-excel=onlyoffice.desktop' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.ms-powerpoint=onlyoffice.desktop' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.oasis.opendocument.text=onlyoffice.desktop' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.oasis.opendocument.spreadsheet=onlyoffice.desktop' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/vnd.oasis.opendocument.presentation=onlyoffice.desktop' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/rtf=onlyoffice.desktop' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'text/plain=onlyoffice.desktop' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # echo 'application/pdf=onlyoffice.desktop' >> /home/${XRDP_USER}/.config/mimeapps.list && \
+    # chown -R ${XRDP_USER}:${XRDP_USER} /home/${XRDP_USER}/.config /home/${XRDP_USER}/.local && \
     # Remove the tmux-based agent execution line - we'll run it as root separately
-    rm -rf /usr/local/bin/onlyoffice.AppImagetion
+    rm -rf /usr/local/bin/onlyoffice.AppImage
 
-    # No longer need tmux, removing that installationCUSTOM_ENTRYPOINTS_DIR}
 # Create necessary directories for supervisor and custom entrypoints
 RUN mkdir -p /etc/supervisor.d /app/conf.d ${DEF_CUSTOM_ENTRYPOINTS_DIR}
 RUN mkdir -p /var/log/supervisor
