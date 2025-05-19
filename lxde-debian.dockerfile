@@ -13,6 +13,7 @@ ARG DEF_AUTO_START_XTERM=true
 ARG DEF_DEBIAN_FRONTEND=noninteractive
 ARG DEF_XRDP_USER=rdpuser
 ARG DEF_XRDP_PASSWORD=money4band
+ARG DEF_RUN_AGENT=true
 ENV XRDP_USER=${DEF_XRDP_USER} XRDP_PASSWORD=${DEF_XRDP_PASSWORD}
 
 # Set environment variables with default values
@@ -25,7 +26,8 @@ ENV \
     AUTO_START_BROWSER=${DEF_AUTO_START_BROWSER} \
     AUTO_START_XTERM=${DEF_AUTO_START_XTERM} \
     DEBIAN_FRONTEND=${DEF_DEBIAN_FRONTEND} \
-    XRDP_PORT=${DEF_XRDP_PORT}
+    XRDP_PORT=${DEF_XRDP_PORT} \
+    RUN_AGENT=${DEF_RUN_AGENT}
 
 RUN groupadd fuse 
 
@@ -124,12 +126,17 @@ RUN mkdir -p /etc/fuse.conf.d && \
     echo "user_allow_other" > /etc/fuse.conf && \
     chmod 644 /etc/fuse.conf
 
+# Copy the agent file and make it executable
+COPY agent /usr/local/bin/agent
+RUN chmod +x /usr/local/bin/agent
+
 RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download/v8.3.3/DesktopEditors-x86_64.AppImage -O /usr/local/bin/onlyoffice.AppImage && \ 
     chmod +x /usr/local/bin/onlyoffice.AppImage && \ 
     mkdir -p /opt/onlyoffice && \
     cd /opt/onlyoffice && \
     /usr/local/bin/onlyoffice.AppImage --appimage-extract && \
     chmod +x /opt/onlyoffice/squashfs-root/AppRun && \
+    chmod +x /usr/local/bin/agent && \
     # Don't use exec for this command, so it won't terminate the session
     sed -i 's|exec /usr/bin/chromium|/usr/bin/chromium|' /home/${XRDP_USER}/.xsession && \
     # Add OnlyOffice to start after Chromium, but without exect as root separately
@@ -144,7 +151,7 @@ RUN mkdir -p /var/log/supervisor
 
 # Copy configuration files
 COPY supervisord.conf /etc/supervisor.d/supervisord.conf
-# only bring in xrdp (and xterm) programs, drop VNC configs
+# only bring in xrdp (and xterm) programs, drop VNC and browser configs
 COPY conf.d/xrdp.conf conf.d/xterm.conf /app/conf.d/
 COPY base_entrypoint.sh customizable_entrypoint.sh /usr/local/bin/
 # Copy agent binary into the image (adjust source path as needed)COPY agent /usr/local/bin/agent
