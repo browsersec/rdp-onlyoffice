@@ -73,7 +73,6 @@ docker run -d -p 3389:3389 \
 - `debian.dockerfile` - Docker build instructions.
 - `supervisord.conf` - Supervisor configuration.
 - `conf.d/` - Supervisor program configs.
-- `browser_conf/` - Browser supervisor configs.
 - `base_entrypoint.sh` - Main entrypoint script.
 - `customizable_entrypoint.sh` - Entrypoint for custom startup logic.
 - `custom_entrypoints_scripts/` - Place your custom scripts here.
