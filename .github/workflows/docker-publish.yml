@@ -2,11 +2,11 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches: [ main, master ]
-    tags: [ 'v*' ]
+    branches: [main, master]
+    tags: ["v*"]
   pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:  # Allow manual triggering
+    branches: [main, master]
+  workflow_dispatch: # Allow manual triggering
 
 jobs:
   build-and-push:
@@ -52,7 +52,6 @@ jobs:
           context: .
           file: debian.dockerfile
           push: ${{ github.event_name != 'pull_request' }}
-          load: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -61,10 +60,15 @@ jobs:
 
       - name: Get image size
         id: image-size
+        if: github.event_name != 'pull_request'
         run: |
-          IMAGE_ID="${{ steps.build-push.outputs.imageid }}"
-          echo "Using image ID: $IMAGE_ID"
-          SIZE=$(docker image inspect $IMAGE_ID --format='{{.Size}}')
+          # Get the first tag to inspect
+          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          echo "Inspecting image: $IMAGE_TAG"
+
+          # Pull one platform variant to get size
+          docker pull --platform linux/amd64 $IMAGE_TAG
+          SIZE=$(docker image inspect $IMAGE_TAG --format='{{.Size}}')
           SIZE_MB=$(echo "scale=2; $SIZE/1024/1024" | bc)
           echo "size=$SIZE_MB MB" >> $GITHUB_OUTPUT
           echo "Image size: $SIZE_MB MB"
