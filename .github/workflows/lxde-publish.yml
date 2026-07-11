@@ -53,17 +53,12 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=oci,dest=/tmp/image.tar
 
       - name: Get image size
         id: image-size
         run: |
-          # Load the image from the build step output
-          docker load < /tmp/image.tar
-          # Get the image ID from the loaded image
-          IMAGE_ID=$(docker images --format "{{.ID}}" | head -n 1)
+          IMAGE_ID="${{ steps.build-push.outputs.imageid }}"
           echo "Using image ID: $IMAGE_ID"
-          # Get the image size
           SIZE=$(docker image inspect $IMAGE_ID --format='{{.Size}}')
           SIZE_MB=$(echo "scale=2; $SIZE/1024/1024" | bc)
           echo "size=$SIZE_MB MB" >> $GITHUB_OUTPUT
