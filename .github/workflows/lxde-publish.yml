@@ -49,6 +49,7 @@ jobs:
           context: .
           file: lxde-debian.dockerfile
           push: ${{ github.event_name != 'pull_request' }}
+          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
