@@ -51,8 +51,10 @@ RUN set -e; \
     shotwell \
     okular \
     vlc \
-    mousepad \
-    wget \
+      mousepad \
+      gedit \
+      eog \
+      wget \
     nano \
     fuse \
     libfuse2 \
@@ -130,19 +132,19 @@ RUN mkdir -p /etc/fuse.conf.d && \
 COPY agent /usr/local/bin/agent
 RUN chmod +x /usr/local/bin/agent
 
-RUN wget https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download/v8.3.3/DesktopEditors-x86_64.AppImage -O /usr/local/bin/onlyoffice.AppImage && \ 
-    chmod +x /usr/local/bin/onlyoffice.AppImage && \ 
+RUN apt update && apt install -qqy squashfs-tools wget && \
+    wget -q https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download/v8.3.3/DesktopEditors-x86_64.AppImage -O /tmp/onlyoffice.AppImage && \
     mkdir -p /opt/onlyoffice && \
-    cd /opt/onlyoffice && \
-    /usr/local/bin/onlyoffice.AppImage --appimage-extract && \
+    OFFSET=$(grep -oba 'hsqs' /tmp/onlyoffice.AppImage | head -1 | cut -d: -f1) && \
+    unsquashfs -f -d /opt/onlyoffice/squashfs-root -o $OFFSET /tmp/onlyoffice.AppImage && \
     chmod +x /opt/onlyoffice/squashfs-root/AppRun && \
-    chmod +x /usr/local/bin/agent && \
-    # Don't use exec for this command, so it won't terminate the session
     sed -i 's|exec /usr/bin/chromium|/usr/bin/chromium|' /home/${XRDP_USER}/.xsession && \
-    # Add OnlyOffice to start after Chromium, but without exect as root separately
     echo '/opt/onlyoffice/squashfs-root/AppRun &' >> /home/${XRDP_USER}/.xsession && \
-    # Remove the tmux-based agent execution line - we'll run it as root separately
-    rm -rf /usr/local/bin/onlyoffice.AppImagetion
+    rm -f /tmp/onlyoffice.AppImage && \
+    apt purge -y squashfs-tools wget && \
+    apt autoremove --purge -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # No longer need tmux, removing that installationCUSTOM_ENTRYPOINTS_DIR}
 # Create necessary directories for supervisor and custom entrypoints
