@@ -59,6 +59,39 @@ jobs:
           provenance: false
           sbom: false
 
+      # kind load image-archive fails on multi-arch manifests because the saved
+      # tarball references platform variants that are not present locally. Push
+      # single-platform per-arch "latest" tags so local KIND clusters on either
+      # x86_64 or arm64 can import the image after
+      # "docker pull --platform <arch> ...:latest-<arch> && docker save ...".
+      - name: Build and push single-platform latest-amd64 image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: lxde-debian.dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ github.repository }}-lxde:latest-amd64
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          provenance: false
+          sbom: false
+
+      - name: Build and push single-platform latest-arm64 image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: lxde-debian.dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository }}-lxde:latest-arm64
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          provenance: false
+          sbom: false
+
       - name: Get image size
         id: image-size
         if: github.event_name != 'pull_request'
