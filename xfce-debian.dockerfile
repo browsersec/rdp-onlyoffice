@@ -95,15 +95,15 @@ RUN mkdir -p /etc/fuse.conf.d && \
 COPY agent /usr/local/bin/agent
 RUN chmod +x /usr/local/bin/agent
 
-RUN apt update && apt install -qqy squashfs-tools wget && \
+RUN apt update && apt install -qqy p7zip-full wget && \
     wget -q https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download/v8.3.3/DesktopEditors-x86_64.AppImage -O /tmp/onlyoffice.AppImage && \
     mkdir -p /opt/onlyoffice && \
-    OFFSET=$(grep -oba 'hsqs' /tmp/onlyoffice.AppImage | head -1 | cut -d: -f1) && \
-    unsquashfs -f -d /opt/onlyoffice/squashfs-root -o $OFFSET /tmp/onlyoffice.AppImage && \
+    cd /opt/onlyoffice && \
+    7z x /tmp/onlyoffice.AppImage -o/opt/onlyoffice/squashfs-root -y > /dev/null 2>&1 && \
     chmod +x /opt/onlyoffice/squashfs-root/AppRun && \
     echo '/opt/onlyoffice/squashfs-root/AppRun &' >> /home/${XRDP_USER}/.xsession && \
     rm -f /tmp/onlyoffice.AppImage && \
-    apt purge -y squashfs-tools wget && \
+    apt purge -y p7zip-full wget && \
     apt autoremove --purge -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
