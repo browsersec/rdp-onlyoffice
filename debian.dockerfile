@@ -94,16 +94,21 @@ RUN mkdir -p /etc/fuse.conf.d && \
     echo "user_allow_other" > /etc/fuse.conf && \
     chmod 644 /etc/fuse.conf
 
-RUN apt update && apt install -qqy p7zip-full wget && \
+RUN apt update && apt install -qqy 7zip squashfs-tools wget && \
     wget -q https://github.com/ONLYOFFICE/appimage-desktopeditors/releases/download/v8.3.3/DesktopEditors-x86_64.AppImage -O /tmp/onlyoffice.AppImage && \
     mkdir -p /opt/onlyoffice && \
-    cd /opt/onlyoffice && \
-    7z x /tmp/onlyoffice.AppImage -o/opt/onlyoffice/squashfs-root -y > /dev/null 2>&1 && \
+    cd /tmp && \
+    7z x onlyoffice.AppImage -o/tmp/appimage-extracted -y && \
+    if [ -f /tmp/appimage-extracted/*.squashfs ]; then \
+        unsquashfs -f -d /opt/onlyoffice/squashfs-root /tmp/appimage-extracted/*.squashfs; \
+    else \
+        mv /tmp/appimage-extracted /opt/onlyoffice/squashfs-root; \
+    fi && \
     chmod +x /opt/onlyoffice/squashfs-root/AppRun && \
     sed -i 's|exec /usr/bin/chromium|/usr/bin/chromium|' /home/${XRDP_USER}/.xsession && \
     echo '/opt/onlyoffice/squashfs-root/AppRun &' >> /home/${XRDP_USER}/.xsession && \
-    rm -f /tmp/onlyoffice.AppImage && \
-    apt purge -y p7zip-full wget && \
+    rm -rf /tmp/onlyoffice.AppImage /tmp/appimage-extracted && \
+    apt purge -y 7zip squashfs-tools wget && \
     apt autoremove --purge -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
